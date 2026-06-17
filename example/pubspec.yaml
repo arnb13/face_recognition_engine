@@ -12,7 +12,6 @@ dependencies:
     sdk: flutter
   face_recognition_engine:
     path: ../
-  image: ^4.9.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
