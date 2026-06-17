@@ -1,0 +1,21 @@
+name: face_recognition_engine_example
+description: Example usage of the face_recognition_engine package.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  face_recognition_engine:
+    path: ../
+  image: ^4.9.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
