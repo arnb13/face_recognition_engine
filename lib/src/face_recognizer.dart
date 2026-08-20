@@ -40,10 +40,13 @@ class RecognitionResult {
 /// — so this package stays detector-agnostic.
 ///
 /// ```dart
-/// final recognizer = await FaceRecognizer.create();
+/// // One of modelAsset / modelBytes is required — no model is bundled.
+/// final recognizer =
+///     await FaceRecognizer.create(modelAsset: 'assets/mobilefacenet.tflite');
 /// final probe = recognizer.embedFrame(rgbFrame, faceRect);
-/// final result = recognizer.identify(probe, store.all);
+/// final result = recognizer.identify(probe, profiles);
 /// if (result.matched) print('Welcome ${result.profile!.name}');
+/// recognizer.dispose();
 /// ```
 ///
 /// Call [dispose] when done to release native resources.
@@ -90,13 +93,22 @@ class FaceRecognizer {
     return embed(crop);
   }
 
-  /// Convenience: decode an NV21 [CameraImage], crop [box] and embed it.
+  /// Convenience: decode a streamed [CameraImage], crop [box] and embed it.
+  ///
+  /// Handles the two formats the bundled screens stream — NV21 (Android) and
+  /// BGRA8888 (iOS) — and throws [UnsupportedError] for anything else, rather
+  /// than embedding mis-decoded pixels.
   ///
   /// Note: [box] must be expressed in the camera image's coordinate space (not
-  /// the rotated/preview space). For anything other than upright NV21 frames,
-  /// decode/rotate yourself and use [embedFrame].
+  /// the rotated/preview space). If the frame needs rotating first, decode and
+  /// rotate it yourself and use [embedFrame].
   List<double> embedCameraImage(CameraImage image, Rect box) {
-    final frame = FaceRecognitionUtil.nv21ToImage(image);
+    final frame = FaceRecognitionUtil.cameraImageToImage(image);
+    if (frame == null) {
+      throw UnsupportedError(
+          'Unsupported camera frame format (raw ${image.format.raw}). Decode '
+          'the frame yourself and call embedFrame instead.');
+    }
     return embedFrame(frame, box);
   }
 

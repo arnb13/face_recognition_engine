@@ -21,6 +21,12 @@ class FaceRecognitionUtil {
   /// Length of the embedding vector MobileFaceNet produces.
   static const int embeddingLength = 192;
 
+  /// `android.graphics.ImageFormat.NV21`, as reported by `CameraImage.format.raw`.
+  static const int rawFormatNv21 = 17;
+
+  /// `kCVPixelFormatType_32BGRA`, as reported by `CameraImage.format.raw`.
+  static const int rawFormatBgra8888 = 1111970369;
+
   /// Decodes a single-plane NV21 [CameraImage] to an RGB [img.Image].
   ///
   /// This is the typical format delivered by `CameraController` image streams
@@ -52,6 +58,60 @@ class FaceRecognitionUtil {
       }
     }
     return out;
+  }
+
+  /// Decodes a single-plane BGRA8888 [CameraImage] to an RGB [img.Image].
+  ///
+  /// This is the format `CameraController` delivers on iOS when configured
+  /// with `ImageFormatGroup.bgra8888`. Rows may be padded, so the plane's
+  /// `bytesPerRow` is honoured rather than assuming `width * 4`.
+  static img.Image bgra8888ToImage(CameraImage image) {
+    final int width = image.width;
+    final int height = image.height;
+    final plane = image.planes.first;
+    final Uint8List bytes = plane.bytes;
+    final int stride = plane.bytesPerRow;
+
+    final out = img.Image(width: width, height: height);
+
+    for (int y = 0; y < height; y++) {
+      final int row = y * stride;
+      for (int x = 0; x < width; x++) {
+        final int i = row + (x << 2);
+        // Byte order is B, G, R, A.
+        out.setPixelRgb(x, y, bytes[i + 2], bytes[i + 1], bytes[i]);
+      }
+    }
+    return out;
+  }
+
+  /// Decodes a streamed [CameraImage] to RGB, choosing the decoder from the
+  /// frame's platform pixel format: NV21 on Android, BGRA8888 on iOS.
+  ///
+  /// Returns null for any other format, so callers can skip the frame instead
+  /// of feeding the model mis-decoded pixels. Note the returned image is in the
+  /// sensor's orientation — rotate it (as the bundled screens do) before
+  /// cropping with a box from an upright-oriented detector.
+  static img.Image? cameraImageToImage(CameraImage image) {
+    if (image.planes.isEmpty) return null;
+
+    // Dispatch on the raw platform constant, not `format.group`: the camera
+    // plugin maps Android's NV21 (17) to ImageFormatGroup.unknown, so the
+    // group alone cannot tell NV21 apart from an unsupported format.
+    final raw = image.format.raw;
+    if (raw == rawFormatNv21) return nv21ToImage(image);
+    if (raw == rawFormatBgra8888) return bgra8888ToImage(image);
+
+    // Unfamiliar raw value: fall back to the comparable group where it is
+    // specific enough to identify the layout.
+    switch (image.format.group) {
+      case ImageFormatGroup.nv21:
+        return nv21ToImage(image);
+      case ImageFormatGroup.bgra8888:
+        return bgra8888ToImage(image);
+      default:
+        return null;
+    }
   }
 
   /// Crops [box] out of [frame] (clamped to bounds) and resizes to the

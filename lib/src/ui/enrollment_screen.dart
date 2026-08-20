@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
@@ -140,7 +141,11 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
         _camera!,
         ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.nv21,
+        // NV21 on Android, BGRA8888 on iOS — the two layouts
+        // FaceRecognitionUtil.cameraImageToImage can decode.
+        imageFormatGroup: Platform.isIOS
+            ? ImageFormatGroup.bgra8888
+            : ImageFormatGroup.nv21,
       );
       _controller = controller;
       await controller.initialize();
@@ -216,7 +221,15 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
     final recognizer = _recognizer;
     if (recognizer == null) return;
 
-    img.Image frame = FaceRecognitionUtil.nv21ToImage(image);
+    final decoded = FaceRecognitionUtil.cameraImageToImage(image);
+    if (decoded == null) {
+      if (mounted) {
+        setState(() => _status = 'Unsupported camera frame format');
+      }
+      return;
+    }
+
+    img.Image frame = decoded;
     if (_rotationDegrees != 0) {
       frame = img.copyRotate(frame, angle: _rotationDegrees);
     }

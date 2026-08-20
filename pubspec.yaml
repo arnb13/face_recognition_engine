@@ -2,7 +2,7 @@ name: face_recognition_engine
 description: >-
   On-device face recognition for Flutter using MobileFaceNet embeddings and
   cosine matching, with multi-angle enrollment storage and anti-spoofing hooks.
-version: 1.0.3
+version: 1.1.0
 repository: https://github.com/arnb13/face_recognition_engine
 issue_tracker: https://github.com/arnb13/face_recognition_engine/issues
 topics:
@@ -27,21 +27,24 @@ topics:
 #    path: screenshots/6-live-detection.jpg
 
 environment:
-  sdk: ^3.5.0
-  flutter: ">=3.22.0"
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  camera: ^0.11.0
-  google_mlkit_face_detection: ^0.13.2
-  image: ^4.9.1
-  path_provider: ^2.1.4
+  camera: ^0.12.0+2
+  google_mlkit_face_detection: ^0.15.1
+  image: ^4.9.2
+  path_provider: ^2.1.6
   tflite_flutter: ^0.12.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Test-only: `package:camera` does not re-export the image data types, which
+  # the frame-decoding tests need in order to build a CameraImage.
+  camera_platform_interface: ^2.13.1
 # No model is bundled — the consuming app supplies the MobileFaceNet .tflite
 # (as an asset or bytes). See the README "Model & license" section.

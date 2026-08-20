@@ -1,41 +1,32 @@
 # face_recognition_engine
 
-On-device face recognition for Flutter. MobileFaceNet embeddings (112×112 →
-192-d) with cosine matching, guided multi-angle enrollment, liveness /
-anti-spoofing, and ready-made camera UI — all running locally, no server.
+**On-device face recognition for Flutter.** MobileFaceNet embeddings, cosine
+matching, guided multi-angle enrollment, liveness / anti-spoofing and
+ready-made camera screens — all running locally. No server, no network call, no
+face data leaving the device.
 
-Two one-call flows do the heavy lifting:
+[![pub package](https://img.shields.io/pub/v/face_recognition_engine.svg)](https://pub.dev/packages/face_recognition_engine)
+[![pub points](https://img.shields.io/pub/points/face_recognition_engine)](https://pub.dev/packages/face_recognition_engine/score)
+[![likes](https://img.shields.io/pub/likes/face_recognition_engine)](https://pub.dev/packages/face_recognition_engine/score)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- **`FaceRecognitionKit.enroll(context)`** — opens a guided camera and returns
-  the face embeddings.
-- **`FaceRecognitionKit.detect(context, candidates: …)`** — opens a live camera,
-  runs liveness / anti-spoof checks, and matches against embeddings you supply.
+Two calls do the heavy lifting:
 
-The ML Kit face detector ships with the package. The **MobileFaceNet model is
-not bundled** — you supply your own `.tflite` (see
-[Model & license](#model--license)) — which keeps the package tiny and avoids
-redistributing weights of uncertain provenance. Lower-level pieces are available
-if you want to build your own UI.
+```dart
+final enrolled = await FaceRecognitionKit.enroll(context, modelAsset: model);
+final match    = await FaceRecognitionKit.detect(context,
+                       candidates: people, modelAsset: model);
+```
 
-## Features
-
-- 📸 **Ready-made camera screens** — guided multi-angle enrollment + live
-  recognition, behind two function calls.
-- 🧠 **Bring-your-own model** — load any MobileFaceNet `.tflite` from an asset
-  or `Uint8List`; nothing heavy bundled.
-- 🛡️ **Liveness & anti-spoofing** — blink / head-turn / smile challenges
-  (optionally randomized) plus a passive texture/CNN `SpoofDetector` (BYO model).
-- 👥 **Multi-angle enrollment** — several templates per person; optional
-  file-backed persistence (`FaceProfileStore`).
-- 🔍 **1:N identification** — match a probe against all enrolled people by best
-  cosine similarity.
-- ⚙️ **One config object** — `RecognitionConfig` drives both flows (thresholds,
-  challenges, spoof gate); immutable, `copyWith`, JSON-serialisable.
+---
 
 ## Screenshots
 
-From the [example app](example/lib/main.dart) — the guided enrollment and live
-recognition screens are what `enroll()` and `detect()` open for you.
+The enrollment and live-recognition screens below are what `enroll()` and
+`detect()` open for you. The first shot — the enrolled-people list and the
+"Identified" dialog — is host-app UI built *around* those two calls: the package
+hands back a `DetectionResult` and leaves the presentation to you. (The bundled
+[`example/`](example/lib/main.dart) app is deliberately smaller than this.)
 
 | Identified | Guided enrollment | Capturing a pose |
 | --- | --- | --- |
@@ -45,25 +36,95 @@ recognition screens are what `enroll()` and `detect()` open for you.
 | --- | --- | --- |
 | ![Third enrollment angle captured, all three poses stored](screenshots/4-enroll-left.jpg) | ![Live recognition prompting the user to blink](screenshots/5-liveness-check.jpg) | ![Live recognition rejecting an unenrolled face as Unknown](screenshots/6-live-detection.jpg) |
 
+## Features
+
+| | |
+| --- | --- |
+| 📸 **Ready-made camera screens** | Guided multi-angle enrollment + live recognition, behind two function calls. |
+| 🧠 **Bring your own model** | Load any MobileFaceNet `.tflite` (112×112 → 192-d) from an asset or `Uint8List`. Nothing heavy bundled. |
+| 🛡️ **Liveness & anti-spoofing** | Blink / head-turn / smile challenges, optionally randomized, plus a passive texture `SpoofDetector` (BYO model). |
+| 👥 **Multi-angle enrollment** | Several templates per person; optional file-backed persistence via `FaceProfileStore`. |
+| 🔍 **1:N identification** | Match a probe against every enrolled person by best cosine similarity. |
+| ⚙️ **One config object** | `RecognitionConfig` drives both flows — immutable, `copyWith`, JSON-serialisable. |
+| 🔒 **Fully offline** | ML Kit detection and TFLite inference run on-device. |
+
+The ML Kit face detector ships with the package. The **MobileFaceNet model does
+not** — you supply your own `.tflite`, which keeps the package small and avoids
+redistributing weights of uncertain provenance. See
+[Model & license](#model--license).
+
 ## Install
 
 ```yaml
 dependencies:
-  face_recognition_engine: ^1.0.0
+  face_recognition_engine: ^1.1.0
 ```
+
+### Requirements
+
+Inherited from `camera` and `google_mlkit_face_detection`:
+
+| | |
+| --- | --- |
+| Flutter | 3.44.0 or newer (Dart 3.12+) |
+| Android | `minSdkVersion 24` |
+| iOS | deployment target 15.5 or newer |
 
 ### Platform setup
 
-This package uses the camera and TensorFlow Lite. Follow the platform setup for
-[`camera`](https://pub.dev/packages/camera#installation) and
+This package uses the camera, ML Kit and TensorFlow Lite. Follow the platform
+setup for [`camera`](https://pub.dev/packages/camera#installation) and
 [`tflite_flutter`](https://pub.dev/packages/tflite_flutter#installation) — most
-importantly camera permissions in `AndroidManifest.xml` / `Info.plist`, and on
-Android `minSdkVersion 21`.
+importantly camera permissions in `AndroidManifest.xml` / `Info.plist`.
+
+#### Android: JVM target mismatch
+
+The plugin chain disagrees on JVM target — `tflite_flutter` compiles Java at 11,
+`camera_android_camerax` at 17, and their Kotlin tasks default to the toolchain
+(21). AGP rejects the mismatch, so a build fails with:
+
+```
+Inconsistent JVM-target compatibility detected for tasks
+'compileDebugJavaWithJavac' (11) and 'compileDebugKotlin' (21).
+```
+
+Pin both to 17 across every subproject in your app's **root**
+`android/build.gradle.kts`:
+
+```kotlin
+subprojects {
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
+    }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+}
+```
+
+This block must come **before** the `subprojects { project.evaluationDependsOn(":app") }`
+block in Flutter's generated root build file — that line forces early evaluation,
+and `afterEvaluate` throws "Cannot run Project.afterEvaluate(Action) when the
+project is already evaluated" if registered after it.
+
+> **Platform support.** The bundled screens stream **NV21** on Android and
+> **BGRA8888** on iOS, and decode whichever arrives — so both platforms are
+> supported. The headless pieces (`FaceRecognizer`, `FaceRecognitionUtil`,
+> `FaceProfileStore`, `SpoofDetector`) are platform-agnostic anyway: feed them
+> an upright RGB `img.Image` from any source and they work anywhere Flutter and
+> TFLite do.
 
 ### Provide a model
 
-No model ships with the package. Add a MobileFaceNet `.tflite` (112×112 input →
-192-d output) to your app and declare it:
+Add a MobileFaceNet `.tflite` (112×112 input → 192-d output) to **your app** and
+declare it:
 
 ```yaml
 flutter:
@@ -71,8 +132,8 @@ flutter:
     - assets/mobilefacenet.tflite
 ```
 
-Then pass its asset key (or raw bytes) to the calls below via `modelAsset:`
-(or `modelBytes:`). See [Model & license](#model--license) for sourcing notes.
+Then pass its asset key via `modelAsset:` (or raw bytes via `modelBytes:`).
+Supplying neither throws an `ArgumentError`.
 
 ## Quick start
 
@@ -108,13 +169,22 @@ if (match != null) {
 }
 ```
 
-Both calls return `null` if the user backs out (and `detect` also returns `null`
-when the liveness check fails).
+Both calls return `null` if the user backs out, and `detect` also returns `null`
+when the liveness check times out and the user dismisses the retry dialog.
+
+### How enrollment works
+
+`enrollSamples` picks how many poses the guided screen walks through, taken in
+order from **front → right → left → up → down** and clamped to 1–5. The default
+of 3 is driven by yaw (`headEulerAngleY`) and still works on devices that don't
+report pitch, which is treated as 0; steps 4 and 5 are up/down and need real
+pitch (`headEulerAngleX`) to ever trigger. Each pose contributes one embedding to
+`EnrollmentResult.templates`, and the front pose is also returned as `photoJpg`.
 
 ### Persisting enrollments
 
-The package doesn't persist for you, but `FaceProfileStore` is provided if you
-want a ready-made file-backed store:
+The package doesn't persist for you, but `FaceProfileStore` is a ready-made
+file-backed store — one JSON file in the app documents directory:
 
 ```dart
 final store = FaceProfileStore();
@@ -123,26 +193,77 @@ await store.add(profile);
 // ...later: pass store.all as `candidates` to detect().
 ```
 
-It also offers `findDuplicate`, `mergeInto` (re-enroll and cap templates),
-`removeById`, and `clear`. You can persist `enrolled.photoJpg` yourself and set
-`photoPath`, or call `FaceProfileStore.savePhoto`.
+It also offers `findDuplicate`, `mergeInto` (re-enroll, capped at
+`FaceProfileStore.maxTemplatesPerProfile` = 12, oldest dropped first),
+`removeById`, and `clear`.
+
+#### Saving the face photo
+
+Mind the types: `EnrollmentResult.photoJpg` is a `Uint8List` of **encoded JPEG**
+bytes, whereas `FaceProfileStore.savePhoto` takes a **decoded** `img.Image`.
+They are not interchangeable. Either write the bytes out yourself:
+
+```dart
+// `dir` is any writable directory your app already has — e.g. from
+// path_provider's getApplicationDocumentsDirectory().
+final file = File('${dir.path}/alice.jpg');
+await file.writeAsBytes(enrolled.photoJpg!);
+final stored = profile.copyWith(photoPath: file.path);
+```
+
+…or add `image` to your own dependencies and decode first:
+
+```dart
+import 'package:image/image.dart' as img;
+
+final decoded = img.decodeJpg(enrolled.photoJpg!)!;
+final path = await FaceProfileStore.savePhoto(decoded, 'alice');
+```
+
+The package does not re-export `package:image`, so the second route needs
+`image` in your app's `pubspec.yaml`.
 
 ### Configuring liveness & anti-spoofing
 
-Everything is on `RecognitionConfig`, passed to both flows:
+Everything is on `RecognitionConfig`, passed to both flows. Defaults shown:
 
 ```dart
 const config = RecognitionConfig(
-  matchThreshold: 0.8,
+  matchThreshold: 0.8,        // min cosine similarity to accept a match
+  enrollSamples: 3,           // guided poses, clamped to 1-5
+  minFaceWidthFraction: 0.18, // "move a bit closer" quality gate
   livenessEnabled: true,
-  randomizeLiveness: true,   // pick one challenge at random per attempt
+  randomizeLiveness: true,    // pick ONE enabled challenge at random per attempt
   requireBlink: true,
   requireHeadTurn: false,
   requireSmile: true,
   livenessTimeoutSec: 20,
   passiveSpoofEnabled: false, // set true + pass spoofModelAsset to detect()
+  spoofLiveThreshold: 0.5,
 );
 ```
+
+`randomizeLiveness` only kicks in when more than one challenge is enabled — it
+then requires exactly one of them, re-picked on every retry, so a pre-recorded
+attack can't anticipate the prompt.
+
+### Anti-spoofing
+
+Active-liveness challenges (blink / head-turn / smile) are run **for you** by
+the bundled `DetectionScreen`; `RecognitionConfig` holds their thresholds, and
+the same values are there if you drive your own UI. For passive, single-frame
+spoof detection, supply a TFLite model (e.g. a MiniFASNet from
+Silent-Face-Anti-Spoofing) and use `SpoofDetector`:
+
+```dart
+final spoof = SpoofDetector(modelAsset: 'assets/antispoof.tflite');
+await spoof.load(); // fails open: isAvailable == false if missing
+final pLive = spoof.liveProbability(rgbFrame, faceRect); // null => skip gate
+```
+
+Defaults match a common 80×80, 3-class (print / live / replay) MiniFASNet
+export; `inputSize`, `numClasses`, `liveIndex`, `cropScale` and the
+normalization are all constructor knobs for other models.
 
 ### Headless engine (build your own UI)
 
@@ -153,19 +274,8 @@ final recognizer =
     await FaceRecognizer.create(config: config, modelAsset: model);
 final probe = recognizer.embedFrame(rgbFrame, faceRect); // your own detection
 final result = recognizer.identify(probe, profiles);
-```
-
-### Anti-spoofing
-
-Active-liveness thresholds (blink / head-turn / smile) live in
-`RecognitionConfig` for you to drive your own UI challenges. For passive,
-single-frame spoof detection, supply a TFLite model (e.g. a MiniFASNet from
-Silent-Face-Anti-Spoofing) and use `SpoofDetector`:
-
-```dart
-final spoof = SpoofDetector(modelAsset: 'assets/antispoof.tflite');
-await spoof.load(); // fails open: isAvailable == false if missing
-final pLive = spoof.liveProbability(rgbFrame, faceRect); // null => skip gate
+if (result.matched) print('Welcome ${result.profile!.name}');
+recognizer.dispose(); // releases the native interpreter
 ```
 
 ## API surface
@@ -182,15 +292,22 @@ final pLive = spoof.liveProbability(rgbFrame, faceRect); // null => skip gate
 | `FaceProfileStore` | Persistent, file-backed enrollment store |
 | `RecognitionConfig` | Immutable thresholds (recognition + liveness) |
 | `SpoofDetector` | Passive texture/CNN anti-spoof (BYO model) |
-| `FaceRecognitionUtil` | Low-level decode / crop / embed / cosine |
+| `FaceRecognitionUtil` | Low-level frame decode (NV21 / BGRA8888) / crop / embed / cosine |
 
 ## Notes & limitations
 
-- **Coordinate spaces.** `embedFrame`/`embedCameraImage` expect the face `Rect`
-  in the *decoded RGB frame's* coordinates. Front cameras are mirrored and
-  preview frames are often rotated — map your detector's boxes accordingly.
-- **`embedCameraImage`** assumes upright single-plane NV21. For other formats or
-  rotations, decode/rotate yourself and call `embedFrame`.
+- **Coordinate spaces.** `embedFrame` / `embedCameraImage` expect the face
+  `Rect` in the *decoded RGB frame's* coordinates. Front cameras are mirrored
+  and preview frames are often rotated — map your detector's boxes accordingly.
+- **Frame formats.** `embedCameraImage` decodes single-plane NV21 and BGRA8888
+  and assumes the frame is already upright; it throws `UnsupportedError` on any
+  other format. `FaceRecognitionUtil.cameraImageToImage` covers those same two
+  formats and returns `null` for anything else — YUV420 included. For other
+  formats, or for frames that still need rotating, produce an upright
+  `img.Image` yourself and call `embedFrame`.
+- **Accuracy is the model's, not the package's.** Thresholds that suit one
+  MobileFaceNet export won't necessarily suit another — tune `matchThreshold`
+  against your own data.
 - The bundled screens are deliberately simple; for full control over the camera
   preview and prompts, build your own UI on top of `FaceRecognizer`.
 
@@ -217,8 +334,8 @@ Before using a model in a product, confirm its license. Safer routes:
   Apache-2.0 MobileFaceNet repo) and keep its `LICENSE` alongside.
 - Use a model you have explicit rights to.
 
-Load it with `modelAsset:` (an asset key) or `modelBytes:` on `FaceRecognitionKit`
-and `FaceRecognizer.create`.
+Load it with `modelAsset:` (an asset key) or `modelBytes:` on
+`FaceRecognitionKit` and `FaceRecognizer.create`.
 
 No anti-spoofing model is bundled either — `SpoofDetector` is bring-your-own (a
 MiniFASNet from
