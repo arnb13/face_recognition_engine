@@ -1,3 +1,8 @@
+## 1.0.3
+
+- Added a screenshots section to the README showing the enrollment, liveness and
+  live-recognition screens.
+
 ## 1.0.2
 
 - Reordered the pub.dev screenshots so the identified-result dialog comes first

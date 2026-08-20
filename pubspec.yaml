@@ -2,7 +2,7 @@ name: face_recognition_engine
 description: >-
   On-device face recognition for Flutter using MobileFaceNet embeddings and
   cosine matching, with multi-angle enrollment storage and anti-spoofing hooks.
-version: 1.0.2
+version: 1.0.3
 repository: https://github.com/arnb13/face_recognition_engine
 issue_tracker: https://github.com/arnb13/face_recognition_engine/issues
 topics:
