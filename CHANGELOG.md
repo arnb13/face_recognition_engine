@@ -1,3 +1,11 @@
+## 1.0.1
+
+- Fixed the enrollment status text running two prompts together while capturing,
+  e.g. "Hold still — capturing Turn your head right". It now reads
+  "Hold still — capturing the right profile".
+- Added screenshots of the enrollment, liveness and live-recognition flows to the
+  pub.dev listing.
+
 ## 1.0.0
 
 First public release.

@@ -2,7 +2,7 @@ name: face_recognition_engine
 description: >-
   On-device face recognition for Flutter using MobileFaceNet embeddings and
   cosine matching, with multi-angle enrollment storage and anti-spoofing hooks.
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/arnb13/face_recognition_engine
 issue_tracker: https://github.com/arnb13/face_recognition_engine/issues
 topics:
@@ -11,6 +11,20 @@ topics:
   - machine-learning
   - tflite
   - camera
+
+screenshots:
+  - description: Guided enrollment — a live face box tracks the user while the prompt asks for the next pose.
+    path: screenshots/1-enroll-front.jpg
+  - description: Enrollment capture in progress — hold still while a turned pose is recorded.
+    path: screenshots/2-enroll-right.jpg
+  - description: Final enrollment angle captured; all three poses are stored as separate embeddings.
+    path: screenshots/3-enroll-left.jpg
+  - description: Liveness / anti-spoofing check on the live recognition screen, prompting a blink.
+    path: screenshots/4-liveness-check.jpg
+  - description: Live recognition rejecting an unenrolled face as Unknown with its best match score.
+    path: screenshots/5-live-detection.jpg
+  - description: Identified dialog showing the matched person and similarity over the enrolled list.
+    path: screenshots/6-identified-result.jpg
 
 environment:
   sdk: ^3.5.0

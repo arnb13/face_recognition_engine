@@ -14,14 +14,21 @@ import 'results.dart';
 
 /// One angle the user is guided to present during enrollment.
 class _PoseStep {
+  /// Imperative prompt shown while the user is getting into the pose,
+  /// e.g. "Turn your head right".
   final String label;
+
+  /// Noun form of the same pose, e.g. "the right profile". Reads correctly
+  /// when embedded in a sentence such as "Hold still, capturing ...".
+  final String poseName;
+
   final IconData icon;
 
   /// True when the head pose (yaw = `headEulerAngleY`, pitch =
   /// `headEulerAngleX`, both degrees) satisfies this step.
   final bool Function(double yaw, double pitch) matches;
 
-  const _PoseStep(this.label, this.icon, this.matches);
+  const _PoseStep(this.label, this.poseName, this.icon, this.matches);
 }
 
 /// Full-screen guided, auto-capturing multi-angle enrollment.
@@ -62,17 +69,17 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
   static const int _requiredStableFrames = 5;
 
   static final List<_PoseStep> _allSteps = [
-    _PoseStep('Look straight ahead', Icons.face,
+    _PoseStep('Look straight ahead', 'the front view', Icons.face,
         (yaw, pitch) => yaw.abs() < 8 && pitch.abs() < 12),
     // Front camera is mirrored, so a turn to the user's right yields a negative
     // yaw (and vice-versa). Map prompts to the user's real direction.
-    _PoseStep('Turn your head right', Icons.arrow_forward,
+    _PoseStep('Turn your head right', 'the right profile', Icons.arrow_forward,
         (yaw, pitch) => yaw <= -_yawTarget),
-    _PoseStep('Turn your head left', Icons.arrow_back,
+    _PoseStep('Turn your head left', 'the left profile', Icons.arrow_back,
         (yaw, pitch) => yaw >= _yawTarget),
-    _PoseStep('Tilt your head up', Icons.arrow_upward,
+    _PoseStep('Tilt your head up', 'the upward tilt', Icons.arrow_upward,
         (yaw, pitch) => pitch >= _pitchTarget),
-    _PoseStep('Tilt your head down', Icons.arrow_downward,
+    _PoseStep('Tilt your head down', 'the downward tilt', Icons.arrow_downward,
         (yaw, pitch) => pitch <= -_pitchTarget),
   ];
 
@@ -193,7 +200,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
         if (_stableFrames >= _requiredStableFrames) {
           await _captureCurrentStep(image, face.boundingBox);
         } else if (mounted) {
-          setState(() => _status = 'Hold still — capturing ${step.label}');
+          setState(() => _status = 'Hold still — capturing ${step.poseName}');
         }
       } else {
         _stableFrames = 0;
