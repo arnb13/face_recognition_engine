@@ -12,19 +12,19 @@ topics:
   - tflite
   - camera
 
-screenshots:
-  - description: Identified dialog showing the matched person and similarity over the enrolled list.
-    path: screenshots/1-identified-result.jpg
-  - description: Guided enrollment — a live face box tracks the user while the prompt asks for the next pose.
-    path: screenshots/2-enroll-front.jpg
-  - description: Enrollment capture in progress — hold still while a turned pose is recorded.
-    path: screenshots/3-enroll-right.jpg
-  - description: Final enrollment angle captured; all three poses are stored as separate embeddings.
-    path: screenshots/4-enroll-left.jpg
-  - description: Liveness / anti-spoofing check on the live recognition screen, prompting a blink.
-    path: screenshots/5-liveness-check.jpg
-  - description: Live recognition rejecting an unenrolled face as Unknown with its best match score.
-    path: screenshots/6-live-detection.jpg
+#screenshots:
+#  - description: Identified dialog showing the matched person and similarity over the enrolled list.
+#    path: screenshots/1-identified-result.jpg
+#  - description: Guided enrollment — a live face box tracks the user while the prompt asks for the next pose.
+#    path: screenshots/2-enroll-front.jpg
+#  - description: Enrollment capture in progress — hold still while a turned pose is recorded.
+#    path: screenshots/3-enroll-right.jpg
+#  - description: Final enrollment angle captured; all three poses are stored as separate embeddings.
+#    path: screenshots/4-enroll-left.jpg
+#  - description: Liveness / anti-spoofing check on the live recognition screen, prompting a blink.
+#    path: screenshots/5-liveness-check.jpg
+#  - description: Live recognition rejecting an unenrolled face as Unknown with its best match score.
+#    path: screenshots/6-live-detection.jpg
 
 environment:
   sdk: ^3.5.0

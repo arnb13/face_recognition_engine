@@ -32,6 +32,19 @@ if you want to build your own UI.
 - ⚙️ **One config object** — `RecognitionConfig` drives both flows (thresholds,
   challenges, spoof gate); immutable, `copyWith`, JSON-serialisable.
 
+## Screenshots
+
+From the [example app](example/lib/main.dart) — the guided enrollment and live
+recognition screens are what `enroll()` and `detect()` open for you.
+
+| Identified | Guided enrollment | Capturing a pose |
+| --- | --- | --- |
+| ![Match dialog showing the identified person and similarity](screenshots/1-identified-result.jpg) | ![Enrollment camera tracking the face and prompting the next pose](screenshots/2-enroll-front.jpg) | ![Enrollment holding still while a turned pose is recorded](screenshots/3-enroll-right.jpg) |
+
+| Final angle | Liveness challenge | Unknown face |
+| --- | --- | --- |
+| ![Third enrollment angle captured, all three poses stored](screenshots/4-enroll-left.jpg) | ![Live recognition prompting the user to blink](screenshots/5-liveness-check.jpg) | ![Live recognition rejecting an unenrolled face as Unknown](screenshots/6-live-detection.jpg) |
+
 ## Install
 
 ```yaml
