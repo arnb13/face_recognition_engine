@@ -1,3 +1,8 @@
+## 1.0.2
+
+- Reordered the pub.dev screenshots so the identified-result dialog comes first
+  and is used as the package thumbnail.
+
 ## 1.0.1
 
 - Fixed the enrollment status text running two prompts together while capturing,
